@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-sora: 'Sora', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #F5F4F0;
+  color: #0D0D0D;
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dot pulse used in hero and guide steps */
+.dot-pulse {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #E8341A;
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.dot-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid rgba(232, 52, 26, 0.4);
+  animation: ring 1.6s ease-in-out infinite;
+}
+
+@keyframes ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0; }
+}
+
+.dot-large {
+  width: 28px;
+  height: 28px;
+}
+
+.dot-large::after {
+  inset: -8px;
+}
