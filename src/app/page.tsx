@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import GetWaylo from '@/components/GetWaylo';
+import PlanChoice from '@/components/PlanChoice';
 
 interface GuideRow {
   id: string;
@@ -419,6 +420,9 @@ export default function HomePage() {
           </a>
         </div>
       </section>
+
+      {/* Choose your plan — free vs paid */}
+      <PlanChoice />
 
       {/* Get Waylo — download, sign up, buy */}
       <GetWaylo />
