@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
+import GetWaylo from '@/components/GetWaylo';
+import PlanChoice from '@/components/PlanChoice';
 
 interface GuideRow {
   id: string;
@@ -257,7 +259,12 @@ export default function HomePage() {
           what to click next — step by step, for any task, spoken aloud.
         </p>
         <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
-
+          <a href="#get" className="flex items-center gap-2 bg-dot text-white px-5 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-sm hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z" />
+            </svg>
+            Download for Android
+          </a>
           <a href="#how-it-works" className="border border-border text-ink px-5 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-sm hover:border-ink transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
             See how it works
           </a>
@@ -413,6 +420,12 @@ export default function HomePage() {
           </a>
         </div>
       </section>
+
+      {/* Choose your plan — free vs paid */}
+      <PlanChoice />
+
+      {/* Get Waylo — download, sign up, buy */}
+      <GetWaylo />
 
       {/* Footer */}
       <footer className="border-t border-border py-8 sm:py-10 mt-10">
