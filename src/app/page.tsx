@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import GetWaylo from '@/components/GetWaylo';
-import PlanChoice from '@/components/PlanChoice';
 
 interface GuideRow {
   id: string;
@@ -151,6 +149,28 @@ function MacDesktopScreen({ screen, dot, active }: { screen: string; dot: { x: n
 export default function HomePage() {
   const [recentGuides, setRecentGuides] = useState<GuideRow[]>([]);
   const [showDownload, setShowDownload] = useState(false);
+  const [dlStep, setDlStep] = useState<'plan' | 'pay' | 'platform'>('plan');
+  const [dlPlan, setDlPlan] = useState<'free' | 'paid' | null>(null);
+  const [pEmail, setPEmail] = useState('');
+  const [pRef, setPRef] = useState('');
+  const [pStatus, setPStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
+  const [pMsg, setPMsg] = useState('');
+  const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'shambhvis@icici';
+  const upiLink = () => `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=Waylo&am=100&cu=INR&tn=${encodeURIComponent('Waylo 25 tasks')}`;
+  const qrUrl = () => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink())}`;
+  const dlInput = 'w-full bg-white border border-border rounded-xl px-4 py-3 text-ink text-sm placeholder:text-stone/60 focus:outline-none focus:border-dot transition-colors';
+  const openDownload = () => { setDlStep('plan'); setDlPlan(null); setPStatus('idle'); setPMsg(''); setShowDownload(true); };
+  async function submitUpgrade() {
+    if (!pEmail.includes('@') || pRef.trim().length < 4) { setPMsg('Enter your email and the UPI reference from your payment.'); setPStatus('error'); return; }
+    setPStatus('saving'); setPMsg('');
+    try {
+      const res = await fetch('/api/upgrade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: pEmail, ref: pRef }) });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Failed');
+      setPStatus('done');
+      setTimeout(() => setDlStep('platform'), 900);
+    } catch (e) { setPMsg(e instanceof Error ? e.message : 'Something went wrong.'); setPStatus('error'); }
+  }
   const [demoStep, setDemoStep] = useState(0);
   const [dotVisible, setDotVisible] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -231,15 +251,14 @@ export default function HomePage() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/></svg>
           </a>
           <button
-            onClick={() => setShowDownload(true)}
+            onClick={openDownload}
             className="bg-dot text-white px-4 sm:px-5 py-2 rounded-full font-semibold text-xs sm:text-sm hover:bg-red-600 transition-colors flex items-center gap-2"
             style={{ fontFamily: 'Sora, sans-serif' }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/>
             </svg>
-            <span className="hidden sm:inline">Download for macOS</span>
-            <span className="sm:hidden">Download</span>
+            <span>Download</span>
           </button>
         </div>
       </nav>
@@ -247,7 +266,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-12 sm:pb-20">
         <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-dot mb-4 sm:mb-6" style={{ fontFamily: 'Sora, sans-serif' }}>
-          For macOS — free early access
+          Free to start · Mac &amp; Android
         </p>
         <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold leading-tight text-ink mb-4 sm:mb-6" style={{ fontFamily: 'Sora, sans-serif' }}>
           The red dot that
@@ -255,16 +274,16 @@ export default function HomePage() {
           <span className="text-dot">shows the way.</span>
         </h1>
         <p className="text-base sm:text-xl text-stone max-w-xl leading-relaxed mb-8 sm:mb-10">
-          Waylo watches your Mac screen and places a pulsing red dot on exactly
-          what to click next — step by step, for any task, spoken aloud.
+          Waylo watches your screen and places a pulsing red dot on exactly
+          what to tap next — step by step, for any task, spoken aloud.
         </p>
         <div className="flex flex-wrap gap-3 sm:gap-4 items-center">
-          <a href="#get" className="flex items-center gap-2 bg-dot text-white px-5 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-sm hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
+          <button onClick={openDownload} className="flex items-center gap-2 bg-dot text-white px-5 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-sm hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 2h14v2H5v-2z" />
             </svg>
-            Download for Android
-          </a>
+            Download Waylo
+          </button>
           <a href="#how-it-works" className="border border-border text-ink px-5 sm:px-7 py-3 sm:py-3.5 rounded-full font-semibold text-sm hover:border-ink transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
             See how it works
           </a>
@@ -367,31 +386,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Recent guides */}
-      {recentGuides.length > 0 && (
-        <section id="recent" className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20 border-t border-border">
-          <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-dot mb-3" style={{ fontFamily: 'Sora, sans-serif' }}>
-            Shared guides
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-8 sm:mb-10" style={{ fontFamily: 'Sora, sans-serif' }}>
-            Real guides, created by real users
-          </h2>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {recentGuides.map((g) => (
-              <Link key={g.id} href={`/g/${g.id}`}
-                className="bg-white border border-border rounded-2xl px-5 sm:px-6 py-4 sm:py-5 flex items-start gap-4 hover:border-dot/40 transition-colors group">
-                <span className="dot-pulse mt-1 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-ink text-sm leading-snug group-hover:text-dot transition-colors">{g.task}</p>
-                  <p className="text-xs text-stone mt-1">
-                    {new Date(g.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Contact */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 border-t border-border">
@@ -421,12 +415,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Choose your plan — free vs paid */}
-      <PlanChoice />
-
-      {/* Get Waylo — download, sign up, buy */}
-      <GetWaylo />
-
       {/* Footer */}
       <footer className="border-t border-border py-8 sm:py-10 mt-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -449,61 +437,75 @@ export default function HomePage() {
               ✕
             </button>
 
-            <div className="flex items-center gap-3 mb-4 sm:mb-6">
-              <span className="dot-pulse dot-large" />
-              <h2 className="text-xl sm:text-2xl font-bold text-ink" style={{ fontFamily: 'Sora, sans-serif' }}>
-                Download Waylo
-              </h2>
-            </div>
-
-            <p className="text-stone text-sm mb-5 sm:mb-6 leading-relaxed">
-              Waylo Desktop is a native macOS app. Read the notes below before running it.
-            </p>
-
-            <div className="space-y-3 mb-6 sm:mb-8">
-              <div className="bg-white border border-border rounded-2xl px-4 sm:px-5 py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span>🔐</span>
-                  <p className="font-semibold text-ink text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>
-                    Permissions on first launch
-                  </p>
+            {dlStep === 'plan' && (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="dot-pulse dot-large" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-ink" style={{ fontFamily: 'Sora, sans-serif' }}>Choose your plan</h2>
                 </div>
-                <p className="text-stone text-xs leading-relaxed mb-2">
-                  Grant access in System Settings → Privacy & Security:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {['Accessibility', 'Screen Recording', 'Microphone'].map((p) => (
-                    <span key={p} className="text-xs bg-dot/10 text-dot font-medium px-2 py-1 rounded-full">{p}</span>
-                  ))}
+                <p className="text-stone text-sm mb-6">Start free, or unlock more with one UPI payment.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button onClick={() => { setDlPlan('free'); setDlStep('platform'); }}
+                    className="text-left bg-white border border-border rounded-2xl p-5 hover:border-dot transition-colors">
+                    <div className="font-bold text-ink text-lg" style={{ fontFamily: 'Sora, sans-serif' }}>Free</div>
+                    <div className="text-2xl font-extrabold text-ink my-1">₹0</div>
+                    <div className="text-stone text-xs">5 guided tasks</div>
+                  </button>
+                  <button onClick={() => { setDlPlan('paid'); setDlStep('pay'); }}
+                    className="text-left bg-ink text-white border border-ink rounded-2xl p-5 hover:opacity-95 transition-opacity">
+                    <div className="font-bold text-lg" style={{ fontFamily: 'Sora, sans-serif' }}>Paid</div>
+                    <div className="text-2xl font-extrabold my-1">₹100 <span className="text-zinc-400 text-sm font-normal">/ 25 tasks</span></div>
+                    <div className="text-zinc-300 text-xs">Best value · one UPI payment</div>
+                  </button>
                 </div>
-              </div>
+              </>
+            )}
 
-              <div className="bg-white border border-border rounded-2xl px-4 sm:px-5 py-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span>🌐</span>
-                  <p className="font-semibold text-ink text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>
-                    Internet connection needed
-                  </p>
+            {dlStep === 'pay' && (
+              <>
+                <button onClick={() => setDlStep('plan')} className="text-stone text-sm mb-3 hover:text-ink">← Back</button>
+                <h2 className="text-xl sm:text-2xl font-bold text-ink mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>Pay ₹100 by UPI</h2>
+                <p className="text-stone text-sm mb-4">Scan or tap to pay, then confirm to continue to your download.</p>
+                {pStatus === 'done' ? (
+                  <div className="text-center py-6"><div className="text-3xl mb-2">✅</div><p className="text-ink font-semibold text-sm">Payment recorded! Taking you to the download…</p></div>
+                ) : (
+                  <>
+                    <div className="bg-white rounded-xl p-3 flex flex-col items-center gap-2 mb-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={qrUrl()} alt="Scan to pay by UPI" width={150} height={150} className="rounded" />
+                      <p className="text-ink text-[11px] font-medium">{UPI_ID}</p>
+                    </div>
+                    <a href={upiLink()} className="block w-full text-center bg-dot text-white py-2.5 rounded-xl font-bold text-sm hover:bg-red-600 transition-colors mb-3" style={{ fontFamily: 'Sora, sans-serif' }}>Pay ₹100 in your UPI app</a>
+                    <div className="flex flex-col gap-2">
+                      <input className={dlInput} type="email" placeholder="Your email (same as sign-in)" value={pEmail} onChange={(e) => setPEmail(e.target.value)} />
+                      <input className={dlInput} placeholder="UPI reference / transaction ID" value={pRef} onChange={(e) => setPRef(e.target.value)} />
+                      {pMsg && <p className="text-dot text-xs">{pMsg}</p>}
+                      <button onClick={submitUpgrade} disabled={pStatus === 'saving'} className="w-full bg-ink text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-60" style={{ fontFamily: 'Sora, sans-serif' }}>{pStatus === 'saving' ? 'Saving…' : "I've paid — continue"}</button>
+                    </div>
+                  </>
+                )}
+                <button onClick={() => setDlStep('platform')} className="block w-full text-center text-stone text-xs mt-4 underline hover:text-ink">Skip — I&rsquo;ll pay later</button>
+              </>
+            )}
+
+            {dlStep === 'platform' && (
+              <>
+                <button onClick={() => setDlStep(dlPlan === 'paid' ? 'pay' : 'plan')} className="text-stone text-sm mb-3 hover:text-ink">← Back</button>
+                <h2 className="text-xl sm:text-2xl font-bold text-ink mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>Choose your device</h2>
+                <p className="text-stone text-sm mb-5">Download Waylo for your platform.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a href="/waylo.apk" download className="text-center bg-dot text-white rounded-2xl p-6 font-bold hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
+                    <div className="text-3xl mb-2">🤖</div>Android
+                    <div className="text-white/80 text-[11px] font-normal mt-1">Install the APK</div>
+                  </a>
+                  <a href="https://github.com/waylo-1/mac-version/releases/download/v1.0.0/Waylo-macOS.dmg" target="_blank" rel="noopener noreferrer" className="text-center bg-ink text-white rounded-2xl p-6 font-bold hover:opacity-95 transition-opacity" style={{ fontFamily: 'Sora, sans-serif' }}>
+                    <div className="text-3xl mb-2">🍎</div>macOS
+                    <div className="text-white/70 text-[11px] font-normal mt-1">Apple Silicon</div>
+                  </a>
                 </div>
-                <p className="text-stone text-xs leading-relaxed">
-                  Waylo connects to our AWS backend to generate guides. Current build uses HTTP — HTTPS coming soon.
-                </p>
-              </div>
-            </div>
-
-            <a
-              href="https://github.com/waylo-1/mac-version/releases/download/v1.0.0/Waylo-macOS.dmg"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full bg-dot text-white py-3.5 sm:py-4 rounded-2xl font-bold text-sm sm:text-base hover:bg-red-600 transition-colors"
-              style={{ fontFamily: 'Sora, sans-serif' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.026 2.747-1.026.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/>
-              </svg>
-              Download
-            </a>
-            <p className="text-center text-xs text-stone mt-3">Apple Silicon Mac · Drag Waylo to Applications, then run: xattr -dr com.apple.quarantine /Applications/Waylo.app</p>
+                <p className="text-center text-[11px] text-stone mt-4 leading-relaxed">Android: open the file, allow &ldquo;Install unknown apps&rdquo;. macOS: run <code className="text-dot">xattr -dr com.apple.quarantine /Applications/Waylo.app</code></p>
+              </>
+            )}
           </div>
         </div>
       )}

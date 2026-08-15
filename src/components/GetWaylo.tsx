@@ -93,7 +93,7 @@ export default function GetWaylo() {
         Waylo runs on Android phones. Download it free — 5 tasks free, then 25 more for just ₹100.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* 1. Download */}
         <div className="bg-white border border-border rounded-2xl p-6 flex flex-col">
           <div className="text-3xl mb-3">📱</div>
