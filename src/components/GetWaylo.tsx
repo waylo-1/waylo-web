@@ -16,7 +16,7 @@ function upiLink(): string {
     pn: UPI_NAME,
     am: String(PRICE),
     cu: 'INR',
-    tn: 'Waylo 100 tasks',
+    tn: 'Waylo 25 tasks',
   });
   return `upi://pay?${params.toString()}`;
 }
@@ -90,7 +90,7 @@ export default function GetWaylo() {
         Download it. Try it. Keep it.
       </h2>
       <p className="text-stone text-sm sm:text-base mb-10 max-w-xl">
-        Waylo runs on Android phones. Download it free — 5 tasks free, then 100 more for just ₹100.
+        Waylo runs on Android phones. Download it free — 5 tasks free, then 25 more for just ₹100.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -153,10 +153,10 @@ export default function GetWaylo() {
         <div className="bg-ink border border-ink rounded-2xl p-6 flex flex-col text-white">
           <div className="flex items-baseline gap-2 mb-1">
             <span className="text-3xl font-extrabold" style={{ fontFamily: 'Sora, sans-serif' }}>₹100</span>
-            <span className="text-zinc-400 text-sm">/ 100 tasks</span>
+            <span className="text-zinc-400 text-sm">/ 25 tasks</span>
           </div>
           <h3 className="font-bold text-lg mb-3" style={{ fontFamily: 'Sora, sans-serif' }}>
-            Unlock 100 tasks
+            Unlock 25 tasks
           </h3>
 
           {pStatus === 'done' ? (

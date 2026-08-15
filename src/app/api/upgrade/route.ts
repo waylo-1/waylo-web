@@ -8,7 +8,7 @@ import { pool } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
-const TASKS = 100;
+const TASKS = 25;
 const PRICE = 100;
 
 let ready = false;
