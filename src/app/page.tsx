@@ -149,7 +149,11 @@ function MacDesktopScreen({ screen, dot, active }: { screen: string; dot: { x: n
 export default function HomePage() {
   const [recentGuides, setRecentGuides] = useState<GuideRow[]>([]);
   const [showDownload, setShowDownload] = useState(false);
-  const [dlStep, setDlStep] = useState<'plan' | 'pay' | 'platform'>('plan');
+  const [dlStep, setDlStep] = useState<'signin' | 'plan' | 'pay' | 'platform'>('plan');
+  const [signedInEmail, setSignedInEmail] = useState('');
+  const [gsiReady, setGsiReady] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const GOOGLE_CLIENT_ID = '506434766076-ck15hl1n5kvfmo2oktk9q7iuh5i9ggi3.apps.googleusercontent.com';
   const [dlPlan, setDlPlan] = useState<'free' | 'paid' | null>(null);
   const [pEmail, setPEmail] = useState('');
   const [pRef, setPRef] = useState('');
@@ -159,7 +163,7 @@ export default function HomePage() {
   const upiLink = () => `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=Waylo&am=100&cu=INR&tn=${encodeURIComponent('Waylo 25 tasks')}`;
   const qrUrl = () => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink())}`;
   const dlInput = 'w-full bg-white border border-border rounded-xl px-4 py-3 text-ink text-sm placeholder:text-stone/60 focus:outline-none focus:border-dot transition-colors';
-  const openDownload = () => { setDlStep('plan'); setDlPlan(null); setPStatus('idle'); setPMsg(''); setShowDownload(true); };
+  const openDownload = () => { setDlPlan(null); setPStatus('idle'); setPMsg(''); setDlStep(signedInEmail ? 'plan' : 'signin'); setShowDownload(true); };
   async function submitUpgrade() {
     if (!pEmail.includes('@') || pRef.trim().length < 4) { setPMsg('Enter your email and the UPI reference from your payment.'); setPStatus('error'); return; }
     setPStatus('saving'); setPMsg('');
@@ -171,6 +175,48 @@ export default function HomePage() {
       setTimeout(() => setDlStep('platform'), 900);
     } catch (e) { setPMsg(e instanceof Error ? e.message : 'Something went wrong.'); setPStatus('error'); }
   }
+
+  // Load Google Identity Services once.
+  useEffect(() => {
+    const w = window as unknown as { google?: { accounts?: { id?: unknown } } };
+    if (w.google?.accounts?.id) { setGsiReady(true); return; }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true; s.defer = true;
+    s.onload = () => setGsiReady(true);
+    document.body.appendChild(s);
+  }, []);
+
+  async function handleCredential(resp: { credential?: string }) {
+    try {
+      const jwt = resp.credential || '';
+      const payload = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const email = String(payload.email || '').toLowerCase();
+      if (!email) return;
+      setSignedInEmail(email);
+      setPEmail(email);
+      fetch('/api/auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name: String(payload.name || ''), googleId: String(payload.sub || '') }),
+      }).catch(() => {});
+      setDlStep('plan');
+    } catch {
+      /* ignore malformed token */
+    }
+  }
+
+  // Render the Google button when the sign-in step is visible.
+  useEffect(() => {
+    if (dlStep !== 'signin' || !gsiReady || !googleBtnRef.current) return;
+    const g = (window as unknown as {
+      google?: { accounts?: { id?: { initialize: (o: unknown) => void; renderButton: (el: HTMLElement, o: unknown) => void } } };
+    }).google;
+    if (!g?.accounts?.id) return;
+    g.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleCredential });
+    googleBtnRef.current.innerHTML = '';
+    g.accounts.id.renderButton(googleBtnRef.current, { theme: 'filled_blue', size: 'large', text: 'continue_with', shape: 'pill', width: 260 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dlStep, gsiReady]);
   const [demoStep, setDemoStep] = useState(0);
   const [dotVisible, setDotVisible] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -436,6 +482,20 @@ export default function HomePage() {
               className="absolute top-4 right-4 sm:top-5 sm:right-5 text-stone hover:text-ink text-xl leading-none w-8 h-8 flex items-center justify-center">
               ✕
             </button>
+
+            {dlStep === 'signin' && (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="dot-pulse dot-large" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-ink" style={{ fontFamily: 'Sora, sans-serif' }}>Sign in to continue</h2>
+                </div>
+                <p className="text-stone text-sm mb-6">Sign in with Google to get Waylo — we use your email to save your plan.</p>
+                <div className="flex justify-center py-3">
+                  <div ref={googleBtnRef} />
+                </div>
+                {!gsiReady && <p className="text-center text-xs text-stone mt-2">Loading sign-in…</p>}
+              </>
+            )}
 
             {dlStep === 'plan' && (
               <>
