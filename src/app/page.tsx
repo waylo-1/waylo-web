@@ -150,7 +150,8 @@ function MacDesktopScreen({ screen, dot, active }: { screen: string; dot: { x: n
 export default function HomePage() {
   const [recentGuides, setRecentGuides] = useState<GuideRow[]>([]);
   const [showDownload, setShowDownload] = useState(false);
-  const [dlStep, setDlStep] = useState<'signin' | 'plan' | 'pay' | 'platform'>('plan');
+  const [dlStep, setDlStep] = useState<'signin' | 'plan' | 'pay' | 'platform' | 'macsteps'>('plan');
+  const [cmdCopied, setCmdCopied] = useState(false);
   const [signedInEmail, setSignedInEmail] = useState('');
   const [gsiReady, setGsiReady] = useState(false);
   const googleBtnRef = useRef<HTMLDivElement>(null);
@@ -175,6 +176,21 @@ export default function HomePage() {
   const qrUrl = (id: string = UPI_ID) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink(id))}`;
   const dlInput = 'w-full bg-white border border-border rounded-xl px-4 py-3 text-ink text-sm placeholder:text-stone/60 focus:outline-none focus:border-dot transition-colors';
   const openDownload = () => { setDlPlan(null); setPStatus('idle'); setPMsg(''); setDlStep(signedInEmail ? 'plan' : 'signin'); setShowDownload(true); };
+  const MACOS_DMG_URL = '/Waylo-macOS.dmg';
+  const triggerDownload = (url: string, filename?: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    if (filename) a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  const copyMacCmd = () => {
+    navigator.clipboard?.writeText('xattr -dr com.apple.quarantine /Applications/Waylo.app');
+    setCmdCopied(true);
+    setTimeout(() => setCmdCopied(false), 1600);
+  };
   async function submitUpgrade() {
     if (!pEmail.includes('@') || pRef.trim().length < 4) { setPMsg('Enter your email and the UPI reference from your payment.'); setPStatus('error'); return; }
     setPStatus('saving'); setPMsg('');
@@ -186,6 +202,12 @@ export default function HomePage() {
       setTimeout(() => setDlStep('platform'), 900);
     } catch (e) { setPMsg(e instanceof Error ? e.message : 'Something went wrong.'); setPStatus('error'); }
   }
+
+  // Auto-start the DMG download when the macOS install-steps screen opens.
+  useEffect(() => {
+    if (dlStep === 'macsteps') triggerDownload(MACOS_DMG_URL, 'Waylo-macOS.dmg');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dlStep]);
 
   // Load Google Identity Services once.
   useEffect(() => {
@@ -589,12 +611,58 @@ export default function HomePage() {
                     <div className="text-3xl mb-2">🤖</div>Android
                     <div className="text-white/80 text-[11px] font-normal mt-1">Install the APK</div>
                   </a>
-                  <a href="https://github.com/waylo-1/mac-version/releases/download/v1.0.0/Waylo-macOS.dmg" target="_blank" rel="noopener noreferrer" className="text-center bg-ink text-white rounded-2xl p-6 font-bold hover:opacity-95 transition-opacity" style={{ fontFamily: 'Sora, sans-serif' }}>
+                  <button onClick={() => setDlStep('macsteps')} className="text-center bg-ink text-white rounded-2xl p-6 font-bold hover:opacity-95 transition-opacity" style={{ fontFamily: 'Sora, sans-serif' }}>
                     <div className="text-3xl mb-2">🍎</div>macOS
-                    <div className="text-white/70 text-[11px] font-normal mt-1">Apple Silicon</div>
-                  </a>
+                    <div className="text-white/70 text-[11px] font-normal mt-1">Download the .dmg</div>
+                  </button>
                 </div>
-                <p className="text-center text-[11px] text-stone mt-4 leading-relaxed">Android: open the file, allow &ldquo;Install unknown apps&rdquo;. macOS: run <code className="text-dot">xattr -dr com.apple.quarantine /Applications/Waylo.app</code></p>
+                <p className="text-center text-[11px] text-stone mt-4 leading-relaxed">Android: open the file, allow &ldquo;Install unknown apps&rdquo;.</p>
+              </>
+            )}
+
+            {dlStep === 'macsteps' && (
+              <>
+                <button onClick={() => setDlStep('platform')} className="text-stone text-sm mb-3 hover:text-ink">← Back</button>
+                <h2 className="text-xl sm:text-2xl font-bold text-ink mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>Your download is starting…</h2>
+                <p className="text-stone text-sm mb-5">
+                  If it didn&rsquo;t,{' '}
+                  <button onClick={() => triggerDownload(MACOS_DMG_URL, 'Waylo-macOS.dmg')} className="text-dot font-semibold underline hover:text-red-600">click here to download Waylo for Mac</button>. Then follow these 4 steps:
+                </p>
+                <ol className="space-y-3 text-sm text-ink mb-4">
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>1</span>
+                    <span><b>Open the file &amp; install.</b> Double-click <code className="bg-border/40 px-1.5 py-0.5 rounded text-xs">Waylo.dmg</code> in your Downloads, then drag <b>Waylo</b> into your <b>Applications</b> folder.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>2</span>
+                    <span>
+                      <b>Open it the first time.</b> Right-click (or Control-click) the <b>Waylo</b> app → <b>Open</b> → <b>Open</b>.
+                      <span className="block mt-2 text-xs text-stone bg-white border border-border rounded-lg px-3 py-2 leading-relaxed">Still blocked? Open <b>&nbsp;→ System Settings → Privacy &amp; Security</b>, scroll down, and click <b>&ldquo;Open Anyway&rdquo;</b>, then open Waylo again. Waylo is from an independent studio, so macOS asks once — this is normal.</span>
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>3</span>
+                    <span>
+                      <b>Allow the 3 permissions</b> when Waylo asks — it needs these to see your screen and guide you:
+                      <span className="flex flex-wrap gap-1.5 mt-2">
+                        {['Accessibility', 'Screen Recording', 'Microphone'].map((p) => (
+                          <span key={p} className="text-[11px] text-dot bg-dot/10 border border-dot/30 rounded-full px-2.5 py-0.5">{p}</span>
+                        ))}
+                      </span>
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>4</span>
+                    <span><b>Sign in with your email</b> and you&rsquo;re ready. Just say what you want — and follow the red dot.</span>
+                  </li>
+                </ol>
+                <details className="border-t border-border pt-3">
+                  <summary className="cursor-pointer text-stone text-xs">Prefer the terminal? (advanced)</summary>
+                  <div className="flex items-center gap-2 mt-2 bg-ink rounded-lg px-3 py-2">
+                    <code className="flex-1 text-[11px] text-white overflow-auto whitespace-nowrap">xattr -dr com.apple.quarantine /Applications/Waylo.app</code>
+                    <button onClick={copyMacCmd} className="flex-shrink-0 bg-dot text-white text-[11px] font-semibold rounded px-2.5 py-1 hover:bg-red-600 transition-colors">{cmdCopied ? 'Copied' : 'Copy'}</button>
+                  </div>
+                </details>
               </>
             )}
           </div>
