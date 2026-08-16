@@ -164,10 +164,10 @@ export default function HomePage() {
   // Any of them "counts" — the account is marked paid by email via the
   // "I've paid" button, not by which VPA received the money.
   const UPI_OPTIONS: { id: string; label: string }[] = [
-    { id: '7042890073@ptsbi', label: 'Paytm · best on Paytm' },
-    { id: 'shambhvis@icici', label: 'ICICI · best on GPay / PhonePe' },
-    // Add another Paytm-registered ID here if you have one:
-    // { id: '98XXXXXXXX@paytm', label: 'Paytm 2' },
+    { id: 'shambhvis@icici', label: 'ICICI · pay with GPay or PhonePe' },
+    // Add a MERCHANT VPA (Paytm/PhonePe for Business) here when ready — a
+    // business handle accepts payments from anyone without the risk/mode blocks
+    // that personal handles hit. e.g. { id: 'paytmqr...@paytm', label: 'Paytm' }
   ];
   const [upiIdx, setUpiIdx] = useState(0);
   const UPI_ID = UPI_OPTIONS[upiIdx].id;
