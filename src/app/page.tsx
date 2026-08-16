@@ -160,9 +160,19 @@ export default function HomePage() {
   const [pRef, setPRef] = useState('');
   const [pStatus, setPStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
   const [pMsg, setPMsg] = useState('');
-  const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID || 'shambhvis@icici';
-  const upiLink = () => `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=Waylo&am=100&cu=INR&tn=${encodeURIComponent('Waylo 25 tasks')}`;
-  const qrUrl = () => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink())}`;
+  // Multiple UPI payees so people can pick one that works in their app.
+  // Any of them "counts" — the account is marked paid by email via the
+  // "I've paid" button, not by which VPA received the money.
+  const UPI_OPTIONS: { id: string; label: string }[] = [
+    { id: '7042890073@ptsbi', label: 'Paytm · best on Paytm' },
+    { id: 'shambhvis@icici', label: 'ICICI · best on GPay / PhonePe' },
+    // Add another Paytm-registered ID here if you have one:
+    // { id: '98XXXXXXXX@paytm', label: 'Paytm 2' },
+  ];
+  const [upiIdx, setUpiIdx] = useState(0);
+  const UPI_ID = UPI_OPTIONS[upiIdx].id;
+  const upiLink = (id: string = UPI_ID) => `upi://pay?pa=${encodeURIComponent(id)}&pn=Waylo&am=100&cu=INR&tn=${encodeURIComponent('Waylo 25 tasks')}`;
+  const qrUrl = (id: string = UPI_ID) => `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink(id))}`;
   const dlInput = 'w-full bg-white border border-border rounded-xl px-4 py-3 text-ink text-sm placeholder:text-stone/60 focus:outline-none focus:border-dot transition-colors';
   const openDownload = () => { setDlPlan(null); setPStatus('idle'); setPMsg(''); setDlStep(signedInEmail ? 'plan' : 'signin'); setShowDownload(true); };
   async function submitUpgrade() {
@@ -537,6 +547,20 @@ export default function HomePage() {
                   <div className="text-center py-6"><div className="text-3xl mb-2">✅</div><p className="text-ink font-semibold text-sm">Payment recorded! Taking you to the download…</p></div>
                 ) : (
                   <>
+                    {UPI_OPTIONS.length > 1 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {UPI_OPTIONS.map((o, i) => (
+                          <button
+                            key={o.id}
+                            type="button"
+                            onClick={() => setUpiIdx(i)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${i === upiIdx ? 'bg-dot text-white border-dot' : 'bg-white text-stone border-border hover:border-dot'}`}
+                          >
+                            {o.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="bg-white rounded-xl p-3 flex flex-col items-center gap-2 mb-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={qrUrl()} alt="Scan to pay by UPI" width={150} height={150} className="rounded" />
