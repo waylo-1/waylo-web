@@ -150,7 +150,7 @@ function MacDesktopScreen({ screen, dot, active }: { screen: string; dot: { x: n
 export default function HomePage() {
   const [recentGuides, setRecentGuides] = useState<GuideRow[]>([]);
   const [showDownload, setShowDownload] = useState(false);
-  const [dlStep, setDlStep] = useState<'signin' | 'plan' | 'pay' | 'platform' | 'macsteps'>('plan');
+  const [dlStep, setDlStep] = useState<'signin' | 'plan' | 'pay' | 'platform' | 'macsteps' | 'androidsteps'>('plan');
   const [cmdCopied, setCmdCopied] = useState(false);
   const [signedInEmail, setSignedInEmail] = useState('');
   const [gsiReady, setGsiReady] = useState(false);
@@ -203,9 +203,10 @@ export default function HomePage() {
     } catch (e) { setPMsg(e instanceof Error ? e.message : 'Something went wrong.'); setPStatus('error'); }
   }
 
-  // Auto-start the DMG download when the macOS install-steps screen opens.
+  // Auto-start the download when an install-steps screen opens.
   useEffect(() => {
     if (dlStep === 'macsteps') triggerDownload(MACOS_DMG_URL, 'Waylo-macOS.dmg');
+    if (dlStep === 'androidsteps') triggerDownload('/waylo.apk', 'Waylo-Android.apk');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dlStep]);
 
@@ -607,10 +608,10 @@ export default function HomePage() {
                 <h2 className="text-xl sm:text-2xl font-bold text-ink mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>Choose your device</h2>
                 <p className="text-stone text-sm mb-5">Download Waylo for your platform.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <a href="/waylo.apk" download className="text-center bg-dot text-white rounded-2xl p-6 font-bold hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
+                  <button onClick={() => setDlStep('androidsteps')} className="text-center bg-dot text-white rounded-2xl p-6 font-bold hover:bg-red-600 transition-colors" style={{ fontFamily: 'Sora, sans-serif' }}>
                     <div className="text-3xl mb-2">🤖</div>Android
                     <div className="text-white/80 text-[11px] font-normal mt-1">Install the APK</div>
-                  </a>
+                  </button>
                   <button onClick={() => setDlStep('macsteps')} className="text-center bg-ink text-white rounded-2xl p-6 font-bold hover:opacity-95 transition-opacity" style={{ fontFamily: 'Sora, sans-serif' }}>
                     <div className="text-3xl mb-2">🍎</div>macOS
                     <div className="text-white/70 text-[11px] font-normal mt-1">Download the .dmg</div>
@@ -663,6 +664,45 @@ export default function HomePage() {
                     <button onClick={copyMacCmd} className="flex-shrink-0 bg-dot text-white text-[11px] font-semibold rounded px-2.5 py-1 hover:bg-red-600 transition-colors">{cmdCopied ? 'Copied' : 'Copy'}</button>
                   </div>
                 </details>
+              </>
+            )}
+
+            {dlStep === 'androidsteps' && (
+              <>
+                <button onClick={() => setDlStep('platform')} className="text-stone text-sm mb-3 hover:text-ink">← Back</button>
+                <h2 className="text-xl sm:text-2xl font-bold text-ink mb-1" style={{ fontFamily: 'Sora, sans-serif' }}>Your download is starting…</h2>
+                <p className="text-stone text-sm mb-5">
+                  If it didn&rsquo;t,{' '}
+                  <button onClick={() => triggerDownload('/waylo.apk', 'Waylo-Android.apk')} className="text-dot font-semibold underline hover:text-red-600">tap here to download Waylo for Android</button>. Then follow these steps:
+                </p>
+                <ol className="space-y-3 text-sm text-ink mb-4">
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>1</span>
+                    <span><b>Install the app.</b> Open the downloaded <code className="bg-border/40 px-1.5 py-0.5 rounded text-xs">Waylo.apk</code> file. If your phone asks, allow <b>&ldquo;Install unknown apps&rdquo;</b> for your browser, then tap <b>Install</b>.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>2</span>
+                    <span><b>Open Waylo</b> and tap <b>Turn on Accessibility</b> — it takes you to the Accessibility screen.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>3</span>
+                    <span>
+                      <b>If the switch is greyed out</b> and says &ldquo;Restricted setting&rdquo;:
+                      <span className="block mt-2 text-xs text-stone bg-white border border-border rounded-lg px-3 py-2 leading-relaxed">Go to <b>Settings → Apps → Waylo</b>, tap the <b>⋮ menu (top-right)</b> → <b>&ldquo;Allow restricted settings&rdquo;</b> → enter your phone PIN. Then return to <b>Settings → Accessibility → Waylo</b> and turn it on. This is Android&rsquo;s one-time safety step for apps installed outside the Play Store.</span>
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>4</span>
+                    <span><b>Allow &ldquo;Display over other apps&rdquo;</b> when Waylo asks — that&rsquo;s what lets the red box appear on your screen.</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-dot text-white text-xs font-bold flex items-center justify-center" style={{ fontFamily: 'Sora, sans-serif' }}>5</span>
+                    <span><b>Sign in with your email</b> and you&rsquo;re ready. Just say what you want — and follow the red box.</span>
+                  </li>
+                </ol>
+                <p className="text-xs text-stone bg-white border border-border rounded-lg px-3 py-2 leading-relaxed">
+                  Waylo automatically turns itself off inside banking &amp; payment apps for your safety.
+                </p>
               </>
             )}
           </div>
