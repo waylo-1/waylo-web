@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
+import Testimonials from '@/components/Testimonials';
 
 interface GuideRow {
   id: string;
@@ -287,6 +288,9 @@ export default function HomePage() {
           <a href="#how-it-works" className="text-sm text-stone hover:text-ink transition-colors hidden md:block">
             How it works
           </a>
+          <a href="#reviews" className="text-sm text-stone hover:text-ink transition-colors hidden md:block">
+            Reviews
+          </a>
           <a
             href="https://github.com/waylo-1"
             target="_blank"
@@ -432,6 +436,9 @@ export default function HomePage() {
         </div>
       </section>
 
+
+      {/* Reviews / Testimonials */}
+      <Testimonials />
 
       {/* Contact */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-12 border-t border-border">
